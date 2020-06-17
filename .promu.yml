@@ -6,7 +6,7 @@ repository:
 build:
     static: false
     binaries:
-        - name: nvidia_gpu_exporter
+        - name: nvidia_gpu_prometheus_exporter
     ldflags: |
         -X github.com/prometheus/common/version.Version={{.Version}}
         -X github.com/prometheus/common/version.Revision={{.Revision}}
