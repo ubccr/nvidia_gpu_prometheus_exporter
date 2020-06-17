@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,6 +9,8 @@ import (
 	"github.com/mindprince/gonvml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/version"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 const (
@@ -17,10 +18,8 @@ const (
 )
 
 var (
-	addr = flag.String("web.listen-address", ":9445", "Address to listen on for web interface and telemetry.")
-
 	labels = []string{"minor_number", "uuid", "name"}
-	
+
 	isFanSpeedEnabled = true
 )
 
@@ -200,7 +199,22 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 }
 
 func main() {
-	flag.Parse()
+
+	var (
+		listenAddress = kingpin.Flag(
+			"web.listen-address",
+			"Address on which to expose metrics and web interface.",
+		).Default(":9445").String()
+
+		//debug = kingpin.Flag("debug", "enable debug mode").Default("false").Bool()
+	)
+
+	kingpin.Version(version.Print("nvidia_gpu_exporter"))
+	kingpin.HelpFlag.Short('h')
+	kingpin.Parse()
+
+	log.Printf("Starting nvidia_gpu_prometheus_exporter version: %s", version.Info())
+	log.Printf("Build context: %s", version.BuildContext())
 
 	if err := gonvml.Initialize(); err != nil {
 		log.Fatalf("Couldn't initialize gonvml: %v. Make sure NVML is in the shared library search path.", err)
@@ -216,5 +230,5 @@ func main() {
 	prometheus.MustRegister(NewCollector())
 
 	// Serve on all paths under addr
-	log.Fatalf("ListenAndServe error: %v", http.ListenAndServe(*addr, promhttp.Handler()))
+	log.Fatalf("ListenAndServe error: %v", http.ListenAndServe(*listenAddress, promhttp.Handler()))
 }
